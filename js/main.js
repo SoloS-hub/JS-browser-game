@@ -3,9 +3,28 @@ const context = canvas.getContext("2d")
 const width = (canvas.width = 960)
 const height = (canvas.height = 346)
 const gravity = 9.82
+let gameOn = true
+
 let gamespeed = 1
 
 let xVelocity = 1
+
+const hitboxes = {
+	"player": {
+		x: 7,
+		y: 4,
+		width: 16,
+		height: 28,
+	},
+	"obsticle": {
+		"1,0": {
+			x: 2,
+			y: 0,
+			width: 27,
+			height: 32,
+		},
+	},
+}
 
 class draw {
 	constructor(spriteSheet, fWidth, fHeight, stateX = 0, stateY = 0) {
@@ -14,8 +33,8 @@ class draw {
 		this.stateY = stateY
 		this.frameWidth = fWidth
 		this.frameHeight = fHeight
-		this.frameX = this.frameWidth * this.stateX
-		this.frameY = this.frameHeight * this.stateY
+		this.frameX = 32 * this.stateX
+		this.frameY = 32 * this.stateY
 		this.xPos = 0
 		this.yPos = 0
 		this.scale = 1
@@ -36,8 +55,8 @@ class draw {
 }
 
 class background extends draw {
-	constructor(spriteSheet, fWidth, fHeight, speedMod = 1) {
-		super(spriteSheet, fWidth, fHeight)
+	constructor(spriteSheet, speedMod = 1) {
+		super(spriteSheet, 1024, 346)
 		this.speedModifier = speedMod
 	}
 
@@ -106,17 +125,72 @@ class tile extends draw {
 class playerClass extends draw {
 	constructor(spriteSheet, fWidth, fHeight, stateX = 1, stateY = 0) {
 		super(spriteSheet, fWidth, fHeight, stateX, stateY)
-		this.scale = 1.5
+		this.scale = 1
 		this.xPos = 100
 		this.ground = 2 * 32 + this.frameHeight * this.scale
 		this.yPos = height - this.ground
 		this.jumping = false
-		this.jumpstrength = 1.1
+		this.jumpstrength = (110 * gravity) / 1000
 		this.yVelocity = 0
+		this.hitbox = hitboxes["player"]
 	}
 
 	update() {
 		context.drawImage(this.image, this.frameX, this.frameY, this.frameWidth, this.frameHeight, this.xPos, this.yPos, this.frameWidth * this.scale, this.frameHeight * this.scale)
+
+		// check for collision
+
+		obsticles.forEach((obsticle) => {
+			this.checkCollision(obsticle)
+		})
+	}
+	
+	checkCollision() {
+		if (
+			(this.xPos + this.hitbox.x <= obsticles[0].xPos + obsticles[0].hitbox.x && this.xPos + this.hitbox.x + this.hitbox.width >= obsticles[0].xPos + obsticles[0].hitbox.x) ||
+			(this.xPos + this.hitbox.x <= obsticles[0].xPos + obsticles[0].hitbox.x + obsticles[0].hitbox.width && this.xPos + this.hitbox.x + this.hitbox.width >= obsticles[0].xPos + obsticles[0].hitbox.x + obsticles[0].hitbox.width)
+		) {
+			if (this.yPos + this.frameHeight >= obsticles[0].yPos + obsticles[0].hitbox.y) {
+				console.log("collision")
+				gameOn = false
+			}
+		}
+	}
+}
+
+class obsticle extends draw {
+	constructor(spriteSheet, fWidth, fHeight, stateX = 1, stateY = 0) {
+		super(spriteSheet, fWidth, fHeight, stateX, stateY)
+		this.scale = 1
+		this.yPos = height - 2 * 32 - this.frameHeight * this.scale
+		this.xPos = 1024
+		this.hitbox = hitboxes.obsticle[`${stateX},${stateY}`]
+		this.active = true
+	}
+
+	update() {
+		context.drawImage(
+			this.image,
+			this.frameX,
+			this.frameY,
+			this.frameWidth,
+			this.frameHeight,
+			this.xPos,
+			this.yPos,
+			this.frameWidth * this.scale,
+			this.frameHeight * this.scale
+		)
+
+		this.xPos -= xVelocity
+
+		if (this.xPos <= -this.frameWidth * this.scale) {
+			obsticles.shift()
+		}
+
+		if (this.xPos <= 400 && this.active) {
+			obsticles.push(new obsticle(decor, 32, 32, 1, 0))
+			this.active = false
+		}
 	}
 }
 
@@ -126,28 +200,33 @@ let player = new playerClass(spriteSheetPlayer, 32, 32, 0)
 
 const spriteSheetBG1 = new Image()
 spriteSheetBG1.src = "../img/GandalfHardcore-Background-layers_layer-1.png"
-let bg1 = new background(spriteSheetBG1, 1024, 346, 1)
+let bg1 = new background(spriteSheetBG1, 1)
 
 const spriteSheetBG2 = new Image()
 spriteSheetBG2.src = "../img/GandalfHardcore-Background-layers_layer-2.png"
-let bg2 = new background(spriteSheetBG2, 1024, 346, 0.6)
+let bg2 = new background(spriteSheetBG2, 0.6)
 
 const spriteSheetBG3 = new Image()
 spriteSheetBG3.src = "../img/GandalfHardcore-Background-layers_layer-3.png"
-let bg3 = new background(spriteSheetBG3, 1024, 346, 0.36)
+let bg3 = new background(spriteSheetBG3, 0.36)
 
 const spriteSheetBG4 = new Image()
 spriteSheetBG4.src = "../img/GandalfHardcore-Background-layers_layer-4.png"
-let bg4 = new background(spriteSheetBG4, 1024, 346, 0.216)
+let bg4 = new background(spriteSheetBG4, 0.216)
 
 const spriteSheetBG5 = new Image()
 spriteSheetBG5.src = "../img/GandalfHardcore-Background-layers_layer-5.png"
-let bg5 = new background(spriteSheetBG5, 1024, 346, 0)
+let bg5 = new background(spriteSheetBG5, 0)
 
 const spriteSheetTile = new Image()
 spriteSheetTile.src = "../img/Floor-Tiles1.png"
 let tile1 = new tile(spriteSheetTile, 32, 32, 2, 1, 0)
 let tile2 = new tile(spriteSheetTile, 32, 32, 1, 1, 1)
+
+const decor = new Image()
+decor.src = "../img/Decor.png"
+let obsticles = []
+obsticles.push(new obsticle(decor, 32, 32, 1, 0))
 
 function animate() {
 	bg5.update()
@@ -157,18 +236,21 @@ function animate() {
 	bg1.update()
 	tile1.update()
 	tile2.update()
+	obsticles.forEach((obsticle) => obsticle.update())
 	player.update()
 }
 
 function frame() {
 	context.clearRect(0, 0, width, height)
 	animate()
-	requestAnimationFrame(frame)
+
+	if (gameOn) {
+		requestAnimationFrame(frame)
+	}
 }
 
 setInterval(function () {
 	if (player.jumping) {
-		console.log("test")
 		player.yVelocity -= gravity / 1000
 		player.yPos -= player.yVelocity
 
