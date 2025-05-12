@@ -3,20 +3,45 @@ const context = canvas.getContext("2d")
 const width = (canvas.width = 960)
 const height = (canvas.height = 346)
 const gravity = 9.82
-let gameOn = true
+const timeToUppdate = 15
+
+let gameOn = false
 
 let gamespeed = 1
 
 let xVelocity = 4
 
+const State = {
+	states: {},
+	generateState: function (name, startStateX, endStateX, stateY, timeToUppdate) {
+		if (!this.states[name]) {
+			this.states[name] = {
+				frameIndex: startStateX,
+				startIndex: startStateX,
+				endIndex: endStateX,
+				stateY: stateY,
+				timeToUppdate: timeToUppdate,
+			}
+		}
+	},
+	getState: function (name) {
+		if (this.states[name]) {
+			return this.states[name]
+		}
+	},
+}
+
+State.generateState("runing", 0, 7, 3, 10)
+State.generateState("jumping", 2, 7, 5, 18)
+
 const hitboxes = {
-	"player": {
+	player: {
 		x: 7,
 		y: 4,
 		width: 16,
 		height: 28,
 	},
-	"obsticle": {
+	obsticle: {
 		"1,0": {
 			x: 2,
 			y: 0,
@@ -132,23 +157,40 @@ class playerClass extends draw {
 		this.jumping = false
 		this.jumpstrength = (110 * gravity) / 1000
 		this.yVelocity = 0
-		this.hitbox = hitboxes["player"]
+		this.hitbox = hitboxes.player
+		this.count = 0
+		this.state = State.getState("runing")
 	}
 
 	update() {
-		context.drawImage(this.image, this.frameX, this.frameY, this.frameWidth, this.frameHeight, this.xPos, this.yPos, this.frameWidth * this.scale, this.frameHeight * this.scale)
-
 		// check for collision
 
-		obsticles.forEach((obsticle) => {
-			this.checkCollision(obsticle)
-		})
+		this.checkCollision()
+		this.frameX = this.frameWidth * this.state.frameIndex
+		this.frameY = this.frameHeight * this.state.stateY
+
+		if (this.jumping) {
+			this.state = State.getState("jumping")
+		} else {
+			this.state = State.getState("runing")
+		}
+		if (this.count >= this.state.timeToUppdate) {
+			this.state.frameIndex++
+			if (this.state.frameIndex >= this.state.endIndex + 1) {
+				this.state.frameIndex = this.state.startIndex
+			}
+			this.count = 0
+		}
+		this.count++
+
+		context.drawImage(this.image, this.frameX, this.frameY, this.frameWidth, this.frameHeight, this.xPos, this.yPos, this.frameWidth * this.scale, this.frameHeight * this.scale)
 	}
-	
+
 	checkCollision() {
 		if (
 			(this.xPos + this.hitbox.x <= obsticles[0].xPos + obsticles[0].hitbox.x && this.xPos + this.hitbox.x + this.hitbox.width >= obsticles[0].xPos + obsticles[0].hitbox.x) ||
-			(this.xPos + this.hitbox.x <= obsticles[0].xPos + obsticles[0].hitbox.x + obsticles[0].hitbox.width && this.xPos + this.hitbox.x + this.hitbox.width >= obsticles[0].xPos + obsticles[0].hitbox.x + obsticles[0].hitbox.width)
+			(this.xPos + this.hitbox.x <= obsticles[0].xPos + obsticles[0].hitbox.x + obsticles[0].hitbox.width &&
+				this.xPos + this.hitbox.x + this.hitbox.width >= obsticles[0].xPos + obsticles[0].hitbox.x + obsticles[0].hitbox.width)
 		) {
 			if (this.yPos + this.frameHeight >= obsticles[0].yPos + obsticles[0].hitbox.y) {
 				console.log("collision")
@@ -169,17 +211,7 @@ class obsticle extends draw {
 	}
 
 	update() {
-		context.drawImage(
-			this.image,
-			this.frameX,
-			this.frameY,
-			this.frameWidth,
-			this.frameHeight,
-			this.xPos,
-			this.yPos,
-			this.frameWidth * this.scale,
-			this.frameHeight * this.scale
-		)
+		context.drawImage(this.image, this.frameX, this.frameY, this.frameWidth, this.frameHeight, this.xPos, this.yPos, this.frameWidth * this.scale, this.frameHeight * this.scale)
 
 		this.xPos -= xVelocity
 
@@ -226,7 +258,6 @@ let tile2 = new tile(spriteSheetTile, 32, 32, 1, 1, 1)
 const decor = new Image()
 decor.src = "../img/Decor.png"
 let obsticles = []
-obsticles.push(new obsticle(decor, 32, 32, 1, 0))
 
 function animate() {
 	bg5.update()
@@ -264,7 +295,14 @@ setInterval(function () {
 
 document.addEventListener("keydown", function (e) {
 	if (e.key == " " || e.code == "Space") {
-		if (!player.jumping) {
+		if (!gameOn) {
+			gameOn = true
+			obsticles = []
+			obsticles.push(new obsticle(decor, 32, 32, 1, 0))
+			frame()
+		} else if (!player.jumping) {
+			State.getState("jumping").frameIndex = State.getState("jumping").startIndex
+			player.count = 0
 			player.jumping = true
 			player.yVelocity = player.jumpstrength
 		}
