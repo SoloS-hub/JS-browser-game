@@ -7,7 +7,7 @@ let gameOn = true
 
 let gamespeed = 1
 
-let xVelocity = 1
+let xVelocity = 4
 
 const hitboxes = {
 	"player": {
@@ -79,7 +79,7 @@ class background extends draw {
 			this.frameY * this.frameHeight,
 			this.frameWidth,
 			this.frameHeight,
-			this.xPos + this.frameWidth - 1,
+			this.xPos + this.frameWidth,
 			this.yPos,
 			this.frameWidth * this.scale,
 			this.frameHeight * this.scale
