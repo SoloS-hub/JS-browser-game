@@ -4,12 +4,13 @@ const width = (canvas.width = 960)
 const height = (canvas.height = 346)
 const gravity = 9.82
 const timeToUppdate = 15
+const Hz = 60
 
 let gameOn = false
 
 let gamespeed = 1
 
-let xVelocity = 4
+let xVelocity = 0
 
 const State = {
 	states: {},
@@ -113,7 +114,7 @@ class background extends draw {
 		this.xPos -= xVelocity * this.speedModifier
 
 		if (this.xPos <= -this.frameWidth) {
-			this.xPos = 0
+			this.xPos += this.frameWidth * this.scale
 		}
 	}
 }
@@ -141,8 +142,35 @@ class tile extends draw {
 
 		this.xPos -= xVelocity
 
-		if (this.xPos <= -this.frameWidth) {
-			this.xPos = 0
+		if (this.xPos <= -this.frameWidth * this.scale) {
+			this.xPos += this.frameWidth * this.scale
+		}
+	}
+}
+
+class obsticle extends draw {
+	constructor(spriteSheet, fWidth, fHeight, stateX = 1, stateY = 0) {
+		super(spriteSheet, fWidth, fHeight, stateX, stateY)
+		this.scale = 1
+		this.yPos = height - 2 * 32 - this.frameHeight * this.scale
+		this.xPos = 1024
+		this.hitbox = hitboxes.obsticle[`${stateX},${stateY}`]
+		this.active = true
+	}
+
+	update() {
+		context.drawImage(this.image, this.frameX, this.frameY, this.frameWidth, this.frameHeight, this.xPos, this.yPos, this.frameWidth * this.scale, this.frameHeight * this.scale)
+
+		if (this.xPos <= 200 && this.active) {
+			obsticles.push(new obsticle(decor, 32, 32, 1, 0))
+			this.active = false
+		}
+
+		this.xPos -= xVelocity
+
+		if (this.xPos <= -this.frameWidth * this.scale) {
+			obsticles.shift()
+			obsticles[0].update()
 		}
 	}
 }
@@ -155,15 +183,37 @@ class playerClass extends draw {
 		this.ground = 2 * 32 + this.frameHeight * this.scale
 		this.yPos = height - this.ground
 		this.jumping = false
-		this.jumpstrength = (110 * gravity) / 1000
+		this.jumpstrength = (30 * gravity) / Hz
 		this.yVelocity = 0
 		this.hitbox = hitboxes.player
 		this.count = 0
 		this.state = State.getState("runing")
+		this.score = 0
+		this.test = 0
 	}
 
 	update() {
 		// check for collision
+
+		if (this.jumping) {
+			this.yVelocity -= gravity / Hz
+			this.yPos -= this.yVelocity
+
+			if (this.yPos >= height - this.ground) {
+				this.jumping = false
+				this.yPos = height - this.ground
+				this.yVelocity = 0
+			}
+		}
+
+		this.test++
+
+		if (this.test >= 100) {
+			this.test = 0
+			xVelocity += 0.01
+		}
+
+		this.score += 1 / Hz
 
 		this.checkCollision()
 		this.frameX = this.frameWidth * this.state.frameIndex
@@ -196,32 +246,6 @@ class playerClass extends draw {
 				console.log("collision")
 				gameOn = false
 			}
-		}
-	}
-}
-
-class obsticle extends draw {
-	constructor(spriteSheet, fWidth, fHeight, stateX = 1, stateY = 0) {
-		super(spriteSheet, fWidth, fHeight, stateX, stateY)
-		this.scale = 1
-		this.yPos = height - 2 * 32 - this.frameHeight * this.scale
-		this.xPos = 1024
-		this.hitbox = hitboxes.obsticle[`${stateX},${stateY}`]
-		this.active = true
-	}
-
-	update() {
-		context.drawImage(this.image, this.frameX, this.frameY, this.frameWidth, this.frameHeight, this.xPos, this.yPos, this.frameWidth * this.scale, this.frameHeight * this.scale)
-
-		this.xPos -= xVelocity
-
-		if (this.xPos <= -this.frameWidth * this.scale) {
-			obsticles.shift()
-		}
-
-		if (this.xPos <= 400 && this.active) {
-			obsticles.push(new obsticle(decor, 32, 32, 1, 0))
-			this.active = false
 		}
 	}
 }
@@ -280,18 +304,7 @@ function frame() {
 	}
 }
 
-setInterval(function () {
-	if (player.jumping) {
-		player.yVelocity -= gravity / 1000
-		player.yPos -= player.yVelocity
-
-		if (player.yPos >= height - player.ground) {
-			player.jumping = false
-			player.yPos = height - player.ground
-			player.yVelocity = 0
-		}
-	}
-}, 1)
+setInterval(function () {}, 1)
 
 document.addEventListener("keydown", function (e) {
 	if (e.key == " " || e.code == "Space") {
@@ -299,6 +312,8 @@ document.addEventListener("keydown", function (e) {
 			gameOn = true
 			obsticles = []
 			obsticles.push(new obsticle(decor, 32, 32, 1, 0))
+			player = new playerClass(spriteSheetPlayer, 32, 32, 0)
+			xVelocity = 240 / Hz
 			frame()
 		} else if (!player.jumping) {
 			State.getState("jumping").frameIndex = State.getState("jumping").startIndex
