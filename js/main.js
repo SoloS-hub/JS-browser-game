@@ -170,7 +170,6 @@ class obsticle extends draw {
 
 		if (this.xPos <= -this.frameWidth * this.scale) {
 			obsticles.shift()
-			obsticles[0].update()
 		}
 	}
 }
@@ -291,7 +290,7 @@ function animate() {
 	bg1.update()
 	tile1.update()
 	tile2.update()
-	obsticles.forEach((obsticle) => obsticle.update())
+	obsticles.slice().forEach((obsticle) => obsticle.update())
 	player.update()
 }
 
