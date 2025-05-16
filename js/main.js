@@ -65,19 +65,19 @@ class draw {
 		this.yPos = 0
 		this.scale = 1
 	}
-	update() {
-		context.drawImage(
-			this.image,
-			this.frameX * this.frameWidth,
-			this.frameY * this.frameHeight,
-			this.frameWidth,
-			this.frameHeight,
-			this.xPos,
-			this.yPos,
-			this.frameWidth * this.scale,
-			this.frameHeight * this.scale
-		)
-	}
+	// update() {
+	// 	context.drawImage(
+	// 		this.image,
+	// 		this.frameX * this.frameWidth,
+	// 		this.frameY * this.frameHeight,
+	// 		this.frameWidth,
+	// 		this.frameHeight,
+	// 		this.xPos,
+	// 		this.yPos,
+	// 		this.frameWidth * this.scale,
+	// 		this.frameHeight * this.scale
+	// 	)
+	// }
 }
 
 class background extends draw {
